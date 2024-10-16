@@ -1,0 +1,128 @@
+//Feito no Arduino IDE
+#ifdef ARDUINO_ARCH_ESP32
+#include <WiFi.h>
+#else
+#include <ESP8266WiFi.h>
+#endif
+#include <Espalexa.h>
+#include <ESP32Servo.h>
+
+
+int servoPin = 13;
+// prototypes
+boolean connectWifi();
+
+//callback functions
+void fourthLightChanged(uint8_t brightness);
+
+// Change this!!
+
+// WiFi Credentials
+const char* ssid = "Nome_da_rede";
+const char* password = "Senha";
+
+// device names 
+String Device_4_Name = "Red bulb";
+
+boolean wifiConnected = false;
+
+Espalexa espalexa;
+
+Servo myServo;
+
+void setup()
+{
+  // Anexar o servo ao pino especificado
+  myServo.attach(servoPin);
+  
+  // Inicializando a comunicação serial para debug
+  Serial.begin(115200);
+  Serial.println("Servo conectado");
+
+  Serial.begin(115200);
+
+  // Initialise wifi connection
+  wifiConnected = connectWifi();
+
+  if (wifiConnected)
+  {
+
+    // Define your devices here.
+    espalexa.addDevice(Device_4_Name, fourthLightChanged);
+
+    espalexa.begin();
+
+  }
+
+  else
+  {
+    while (1)
+    {
+      Serial.println("Cannot connect to WiFi. Please check data and reset the ESP.");
+      delay(2500);
+    }
+  }
+
+}
+
+void loop()
+{
+  espalexa.loop();
+  delay(1);
+}
+
+//our callback functions
+void fourthLightChanged(uint8_t brightness)
+{
+
+  //Control the device 
+  if (brightness)
+  {
+//If para colocar na posiçao desejavel até 360º
+    if (brightness == 255)
+    { 
+        myServo.write(90); // Define o servo para a posição 90º
+      }
+  }
+//Else para retornar a posição incial
+  else
+  {
+        myServo.write(0); // Define o servo para a posição 0º
+       }
+   }
+  }
+}
+
+// connect to wifi – returns true if successful or false if not
+boolean connectWifi()
+{
+  boolean state = true;
+  int i = 0;
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("");
+  Serial.println("Connecting to WiFi");
+
+  // Wait for connection
+  Serial.print("Connecting...");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+    if (i > 20) {
+      state = false; break;
+    }
+    i++;
+  }
+  Serial.println("");
+  if (state) {
+    Serial.print("Connected to ");
+    Serial.println(ssid);
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+  }
+  else {
+    Serial.println("Connection failed.");
+  }
+  return state;
+}
